@@ -87,11 +87,17 @@
    <label for="accountPassword">Password</label><input id="accountPassword" name="password" type="password" minlength="8" autocomplete="new-password" placeholder="At least 8 characters" required>
    <div class="account-actions"><button class="greenbtn" type="submit" style="margin:0">Save profile</button><button class="account-close" type="button" id="closeAccount">Cancel</button></div>
   </form>
-  <p class="account-notice">Online accounts need MaxChess to be connected to its authentication service. Until configured, this form will not save or transmit your password.</p>
+  <hr style="border:0;border-top:1px solid var(--line);margin:18px 0">
+  <h3 style="margin:0 0 6px;font-size:16px">Connect MaxChess accounts</h3>
+  <p style="margin-top:0">Paste your Supabase project URL and public anon/publishable key here. Never use a service-role or secret key.</p>
+  <label for="supabaseUrl">Supabase project URL</label><input id="supabaseUrl" type="url" placeholder="https://your-project.supabase.co" autocomplete="url">
+  <label for="supabaseKey">Supabase public anon / publishable key</label><input id="supabaseKey" type="password" placeholder="sb_publishable_… or public anon key" autocomplete="off">
+  <div class="account-actions"><button type="button" class="greenbtn" id="connectAuth" style="margin:0">Connect account service</button></div>
+  <p class="account-notice" id="authStatus">Online sign-in is not connected yet. Your password will not be saved until a real service is connected.</p>
  </div>
 </div>
 
-<script src="https://cdnjs.cloudflare.com/ajax/libs/chess.js/0.10.3/chess.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/chess.js/0.10.3/chess.min.js"></script>\n<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script>
 (()=> {
  const $=id=>document.getElementById(id), boardEl=$('board'), toast=$('toast'), toastbar=$('toastbar');
@@ -172,17 +178,23 @@
  $('themeQuick').onclick=$('rightTheme').onclick=()=>{navigate('play');$('boardTheme').focus();note('Choose a board theme in the Game panel.')};
  
  const accountModal=$('accountModal'),accountForm=$('accountForm'),accountUsername=$('accountUsername'),accountPassword=$('accountPassword'),accountEmail=$('accountEmail');
- // Online authentication is intentionally disabled until a real auth provider is configured. Never store passwords in localStorage.\n function getProfile(){return null}
- function paintProfile(){const profile=getProfile();$('loginBtn').textContent=profile?'Profile':'Log in';$('signupBtn').textContent=profile?'Log out':'Sign up';$('signupBtn').classList.toggle('profile-pill',!!profile);if(profile){$('opponentName').textContent='Black pieces';}}
- function openAccount(){ $('accountTitle').textContent='Create your MaxChess account';$('accountIntro').textContent='Online sign-in is not connected yet. Your password will not be saved.';accountUsername.value='';accountEmail.value='';accountPassword.value='';accountModal.classList.add('open');accountUsername.focus()}
- $('loginBtn').onclick=()=>{note('Online login is not connected yet. MaxChess needs an authentication project to enable secure accounts.');openAccount()};
- $('signupBtn').onclick=()=>openAccount();
+ const authStatus=$('authStatus'),supabaseUrl=$('supabaseUrl'),supabaseKey=$('supabaseKey');
+ let authClient=null,authMode='signup',authUser=null;
+ function savedAuthConfig(){try{return JSON.parse(localStorage.getItem('maxchess_auth_config')||'null')}catch(e){return null}}
+ function setAuthStatus(msg){if(authStatus)authStatus.textContent=msg}
+ function setAuthMode(mode){authMode=mode;$('accountTitle').textContent=mode==='login'?'Log in to MaxChess':'Create your MaxChess account';$('accountIntro').textContent=mode==='login'?'Sign in to your online MaxChess account.':'Choose a username and email for your MaxChess account.';accountPassword.autocomplete=mode==='login'?'current-password':'new-password';accountForm.querySelector('button[type="submit"]').textContent=mode==='login'?'Log in':'Create account'}
+ function paintProfile(){const active=!!authUser;$('loginBtn').textContent=active?(authUser.user_metadata?.username||'Profile'):'Log in';$('signupBtn').textContent=active?'Log out':'Sign up';$('signupBtn').classList.toggle('profile-pill',active);if(active)$('opponentName').textContent='Black pieces'}
+ async function connectAuth(url,key,save=true){if(!window.supabase?.createClient){setAuthStatus('Could not load the Supabase client library. Refresh and try again.');return false}if(!/^https:\/\/[^/]+\.supabase\.co\/?$/.test(url)||!key.trim()){setAuthStatus('Enter a valid Supabase project URL and public anon/publishable key.');return false}try{authClient=window.supabase.createClient(url.replace(/\/$/,''),key.trim());const {data,error}=await authClient.auth.getSession();if(error)throw error;authUser=data.session?.user||null;if(save)localStorage.setItem('maxchess_auth_config',JSON.stringify({url:url.replace(/\/$/,''),key:key.trim()}));authClient.auth.onAuthStateChange((_event,session)=>{authUser=session?.user||null;paintProfile()});paintProfile();setAuthStatus('Connected to Supabase. You can now create an account or sign in.');return true}catch(e){authClient=null;setAuthStatus('Connection failed: '+(e.message||'check your project URL and public key'));return false}}
+ function openAccount(mode){setAuthMode(mode||'signup');accountUsername.value='';accountEmail.value='';accountPassword.value='';accountModal.classList.add('open');accountUsername.focus()}
+ $('loginBtn').onclick=()=>{if(authUser){note('You are signed in as '+(authUser.user_metadata?.username||authUser.email)+'.');return}openAccount('login')};
+ $('signupBtn').onclick=async()=>{if(authUser){if(authClient){const {error}=await authClient.auth.signOut();if(error){note('Could not sign out: '+error.message);return}authUser=null;paintProfile();note('Logged out of MaxChess.')}return}openAccount('signup')};
+ $('connectAuth').onclick=async()=>{const ok=await connectAuth(supabaseUrl.value.trim(),supabaseKey.value.trim());if(ok)note('MaxChess account service connected.')};
  $('closeAccount').onclick=()=>accountModal.classList.remove('open');
  accountModal.addEventListener('click',e=>{if(e.target===accountModal)accountModal.classList.remove('open')});
  document.addEventListener('keydown',e=>{if(e.key==='Escape')accountModal.classList.remove('open')});
- accountForm.onsubmit=e=>{e.preventDefault();note('Secure online accounts are not configured yet. Your password was not saved. MaxChess needs an authentication provider and project keys before sign-up can work.');accountPassword.value='';};
+ accountForm.onsubmit=async e=>{e.preventDefault();if(!authClient){setAuthStatus('Connect your Supabase project below before signing up or logging in.');accountPassword.value='';return}const email=accountEmail.value.trim(),password=accountPassword.value,username=accountUsername.value.trim();if(password.length<8){setAuthStatus('Use a password with at least 8 characters.');return}try{if(authMode==='login'){const {data,error}=await authClient.auth.signInWithPassword({email,password});if(error)throw error;authUser=data.user;accountModal.classList.remove('open');paintProfile();note('Welcome back to MaxChess!')}else{if(username.length<3||username.length>30){setAuthStatus('Username must be 3–30 characters.');return}const {data,error}=await authClient.auth.signUp({email,password,options:{data:{username}}});if(error)throw error;authUser=data.user;if(data.session){accountModal.classList.remove('open');paintProfile();note('Welcome to MaxChess, '+username+'!')}else{setAuthStatus('Check your email to confirm your account, then log in.');accountPassword.value=''}}}catch(err){setAuthStatus(err.message||'Authentication failed.');accountPassword.value=''}};
+ const cfg=savedAuthConfig();if(cfg){supabaseUrl.value=cfg.url||'';supabaseKey.value=cfg.key||'';connectAuth(cfg.url||'',cfg.key||'',false)}
  paintProfile();
-
  document.querySelectorAll('[data-learnpage]').forEach(()=>{});
  if(!game){$('statusTitle').textContent='Could not load chess rules';$('statusText').textContent='Check your internet connection and reload.'}
  render();
