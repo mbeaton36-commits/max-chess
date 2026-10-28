@@ -89,7 +89,7 @@
   </form>
   <hr style="border:0;border-top:1px solid var(--line);margin:18px 0">
   <h3 style="margin:0 0 6px;font-size:16px">Connect MaxChess accounts</h3>
-  <p style="margin-top:0">Paste your Supabase project URL and public anon/publishable key here. Never use a service-role or secret key.</p>
+  <p style="margin-top:0">First, <a href="https://supabase.com/dashboard" target="_blank" rel="noopener noreferrer">open the Supabase dashboard</a> and create a project. Then paste its Project URL and public anon/publishable key here. Never use a service-role or secret key.</p>
   <label for="supabaseUrl">Supabase project URL</label><input id="supabaseUrl" type="url" placeholder="https://your-project.supabase.co" autocomplete="url">
   <label for="supabaseKey">Supabase public anon / publishable key</label><input id="supabaseKey" type="password" placeholder="sb_publishable_… or public anon key" autocomplete="off">
   <div class="account-actions"><button type="button" class="greenbtn" id="connectAuth" style="margin:0">Connect account service</button></div>
@@ -97,7 +97,8 @@
  </div>
 </div>
 
-<script src="https://cdnjs.cloudflare.com/ajax/libs/chess.js/0.10.3/chess.min.js"></script>\n<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/chess.js/0.10.3/chess.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script>
 (()=> {
  const $=id=>document.getElementById(id), boardEl=$('board'), toast=$('toast'), toastbar=$('toastbar');
