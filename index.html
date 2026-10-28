@@ -10,6 +10,7 @@
 @media(max-width:1200px){.app{grid-template-columns:190px minmax(460px,1fr)}.rightbar{display:none}.brand{min-width:160px}.playgrid{grid-template-columns:minmax(280px,1fr) minmax(190px,230px)}}
 @media(max-width:850px){.app{grid-template-columns:62px minmax(0,1fr)}.sidebar{padding:12px 6px}.side-label,.navtext,.side-note{display:none}.navitem{justify-content:center;padding:12px 0}.navitem .icon{font-size:21px}.brand{min-width:auto}.brandname{display:none}.topsearch{max-width:220px}.playgrid{grid-template-columns:1fr}.sidegame{max-width:none}.extras{grid-template-columns:repeat(3,1fr)}.main{padding:16px 12px}.welcome h1{font-size:22px}}
 @media(max-width:540px){.app{grid-template-columns:48px minmax(0,1fr);grid-template-rows:52px 1fr}.topbar{gap:9px;padding:0 8px}.brandmark{width:31px;height:31px}.topsearch{display:none}.topright{gap:3px}.toplink{font-size:12px;padding:7px}.login{display:none}.signup{padding:7px 9px;font-size:12px}.sidebar{grid-row:2}.main{padding:13px 8px}.welcome{align-items:start}.welcome h1{font-size:20px}.welcome p{font-size:12px}.badge{font-size:10px;padding:4px 7px}.playgrid{gap:10px}.sq{font-size:clamp(25px,9vw,43px)}.boardtools{gap:5px;padding:7px}.toolbtn{font-size:11px;padding:8px 7px}.extras{gap:5px;margin-top:14px}.feature{padding:8px}.feature .ficon{font-size:20px}.feature b{font-size:12px}.feature span{font-size:10px}.playerbar{padding:7px}.clock{font-size:15px}.brand{font-size:17px}}
+.boardtools select.toolbtn{max-width:150px}.clock.active-clock{background:#dce8c8;color:#1a2114;border-color:#dce8c8}.clock.flagged{background:#7b2f2f;color:#fff}.toolbtn:disabled{opacity:.45;cursor:not-allowed}
 </style>
 </head>
 <body>
@@ -41,7 +42,7 @@
    <div class="playerbar"><div class="avatar">♟</div><div><div class="playername" id="opponentName">Black pieces</div><div class="playersub" id="opponentSub">Local two-player game</div></div><div class="clock" id="blackClock">10:00</div></div>
    <div class="board" id="board" role="grid" aria-label="Chess board"></div>
    <div class="playerbar"><div class="avatar">♙</div><div><div class="playername">White pieces</div><div class="playersub">You can play both sides</div></div><div class="clock" id="whiteClock">10:00</div></div>
-   <div class="boardtools"><button class="toolbtn" id="newGame">＋ New game</button><button class="toolbtn" id="undo">↶ Takeback</button><button class="toolbtn" id="flip">⇅ Flip board</button><button class="toolbtn" id="hint">✦ Hint</button></div>
+   <div class="boardtools"><button class="toolbtn" id="newGame">＋ New game</button><button class="toolbtn" id="undo">↶ Takeback</button><button class="toolbtn" id="flip">⇅ Flip board</button><button class="toolbtn" id="hint">✦ Hint</button><select class="toolbtn" id="timeControl" aria-label="Time control"><option value="0">No clock</option><option value="60">1 + 0 Bullet</option><option value="180">3 + 0 Blitz</option><option value="300">5 + 0 Blitz</option><option value="600" selected>10 + 0 Rapid</option><option value="900">15 + 0 Rapid</option></select><button class="toolbtn" id="exportPGN">⇩ Download PGN</button><button class="toolbtn" id="exportFEN">Copy position (FEN)</button></div>
    <div class="boardfoot"><span id="moveCount">Move 1</span><span>Tap a piece, then a square</span><span id="turnFoot">White to move</span></div>
   </div>
   <aside class="sidegame">
@@ -79,7 +80,7 @@
  const $=id=>document.getElementById(id), boardEl=$('board'), toast=$('toast'), toastbar=$('toastbar');
  const glyph={wp:'♙',wn:'♘',wb:'♗',wr:'♖',wq:'♕',wk:'♔',bp:'♟',bn:'♞',bb:'♝',br:'♜',bq:'♛',bk:'♚'};
  const emoji={wp:'♙',wn:'♘',wb:'♗',wr:'♖',wq:'♕',wk:'♔',bp:'♟',bn:'♞',bb:'♗',br:'♜',bq:'♛',bk:'♚'};
- const game=window.Chess?new Chess():null;let selected=null,legal=[],flipped=false,lastMove=null,style='classic',computerMode=false,thinking=false;
+ const game=window.Chess?new Chess():null;let selected=null,legal=[],flipped=false,lastMove=null,style='classic',computerMode=false,thinking=false,clockInitial=600,whiteSeconds=600,blackSeconds=600,clockStarted=false,clockPaused=false,flaggedSide=null;
  const files='abcdefgh';
  const lessons={
  pieces:['The pieces','The king moves one square in any direction. The queen moves any number of squares in straight lines or diagonals. Rooks move straight, bishops move diagonally, and knights jump in an L-shape. Pawns move forward and capture diagonally.'],
@@ -102,14 +103,14 @@
   $('statusTitle').textContent=game.in_checkmate()?'Checkmate!':game.in_draw()?'Draw game':game.in_check()?'Check!':(turn==='w'?'White':'Black')+' to move';
   $('statusText').textContent=game.in_checkmate()?(turn==='w'?'Black':'White')+' wins. Start another game to play again.':game.in_draw()?'The game is drawn.':game.in_check()?'The king is under attack. Find a safe move.':selected?'Choose a highlighted square.':'Select a piece to see its legal moves.';
   $('turnFoot').textContent=over?'Game over':(turn==='w'?'White':'Black')+' to move';$('moveCount').textContent='Move '+(Math.floor(history.length/2)+1);
-  $('blackClock').textContent='10:00';$('whiteClock').textContent='10:00';
+  paintClocks();
   $('moves').innerHTML=history.length?'<ol>'+history.filter((_,i)=>i%2===0).map((m,i)=>'<li>'+m+(history[i*2+1]?' &nbsp; '+history[i*2+1]:'')+'</li>').join('')+'</ol>':'<span class="muted">Moves will appear here.</span>';
   $('opponentSub').textContent=computerMode?'Beginner computer mode':'Local two-player game';
  }
  function tap(sq){
   if(!game||game.game_over()||thinking)return;
   if(selected&&legal.some(m=>m.to===sq)){
-   let move=game.move({from:selected,to:sq,promotion:'q'});if(move){lastMove={from:move.from,to:move.to};selected=null;legal=[];render();if(computerMode&&game.turn()==='b'&&!game.game_over())setTimeout(computerMove,350);return}
+   let move=game.move({from:selected,to:sq,promotion:'q'});if(move){clockStarted=true;lastMove={from:move.from,to:move.to};selected=null;legal=[];render();if(computerMode&&game.turn()==='b'&&!game.game_over())setTimeout(computerMove,350);return}
   }
   let p=game.get(sq);if(p&&p.color===game.turn()){selected=sq;legal=game.moves({square:sq,verbose:true});render()}else{selected=null;legal=[];render()}
  }
@@ -118,11 +119,30 @@
   let ms=game.moves({verbose:true});if(!ms.length){thinking=false;return}
   // Beginner opponent: favor captures, checks, and safe-looking random legal moves.
   const captures=ms.filter(m=>m.captured),checks=ms.filter(m=>m.san.includes('+')||m.san.includes('#'));let pool=checks.length?checks:captures.length?captures:ms;
-  let m=pool[Math.floor(Math.random()*pool.length)];game.move(m);lastMove={from:m.from,to:m.to};selected=null;legal=[];thinking=false;render()
+  let m=pool[Math.floor(Math.random()*pool.length)];game.move(m);clockStarted=true;lastMove={from:m.from,to:m.to};selected=null;legal=[];thinking=false;render()
  }
- function reset(computer=false){if(!game)return;game.reset();selected=null;legal=[];lastMove=null;computerMode=computer;render();note(computer?'Beginner computer game started.':'New game started.')}
+ function reset(computer=false){if(!game)return;game.reset();selected=null;legal=[];lastMove=null;computerMode=computer;clockInitial=Number($('timeControl').value)||0;whiteSeconds=blackSeconds=clockInitial;clockStarted=false;clockPaused=false;flaggedSide=null;render();note(computer?'Beginner computer game started.':'New game started.')}
  $('newGame').onclick=()=>reset(false);$('startGame').onclick=()=>reset(false);$('undo').onclick=()=>{if(game.undo()){if(computerMode&&game.turn()==='b')game.undo();selected=null;legal=[];lastMove=null;render();note('Last move taken back.')}else note('There are no moves to take back yet.')};$('flip').onclick=()=>{flipped=!flipped;render()};$('playComputer').onclick=()=>{reset(true);navigate('play')};$('computerStart').onclick=()=>{reset(true);navigate('play')};$('analysisStart').onclick=()=>navigate('play');$('openingStart').onclick=()=>navigate('play');$('practiceStart').onclick=()=>navigate('play');$('puzzleStart').onclick=()=>navigate('play');
  $('hint').onclick=()=>{if(!game||game.game_over()){note('Start a game first.');return}let ms=game.moves({verbose:true});if(!ms.length)return;let checks=ms.filter(m=>m.san.includes('+')||m.san.includes('#')),caps=ms.filter(m=>m.captured),m=(checks[0]||caps[0]||ms[0]);selected=m.from;legal=game.moves({square:m.from,verbose:true});render();note('Hint: look at '+m.from+' and consider '+m.san+'.')};
+
+ function fmtTime(n){n=Math.max(0,Math.ceil(n));return Math.floor(n/60)+':'+String(n%60).padStart(2,'0')}
+ function paintClocks(){
+  const w=$('whiteClock'),b=$('blackClock');if(!w||!b)return;
+  w.textContent=clockInitial?fmtTime(whiteSeconds):'∞';b.textContent=clockInitial?fmtTime(blackSeconds):'∞';
+  w.classList.toggle('active-clock',!!clockInitial&&clockStarted&&!clockPaused&&game.turn()==='w'&&!game.game_over());
+  b.classList.toggle('active-clock',!!clockInitial&&clockStarted&&!clockPaused&&game.turn()==='b'&&!game.game_over());
+  w.classList.toggle('flagged',flaggedSide==='w');b.classList.toggle('flagged',flaggedSide==='b');
+ }
+ setInterval(()=>{
+  if(!game||!clockInitial||!clockStarted||clockPaused||game.game_over()||flaggedSide)return;
+  if(game.turn()==='w'){whiteSeconds=Math.max(0,whiteSeconds-1);if(whiteSeconds===0){flaggedSide='w';clockPaused=true;note('White ran out of time. Black wins on time.')}}else{blackSeconds=Math.max(0,blackSeconds-1);if(blackSeconds===0){flaggedSide='b';clockPaused=true;note('Black ran out of time. White wins on time.')}}
+  paintClocks();
+ },1000);
+ function downloadText(name,text,type){const blob=new Blob([text],{type});const url=URL.createObjectURL(blob);const a=document.createElement('a');a.href=url;a.download=name;document.body.appendChild(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(url),1000)}
+ $('exportPGN').onclick=()=>{if(!game||!game.history().length){note('Play a move first, then export your PGN.');return}downloadText('maxchess-game.pgn',game.pgn({max_width:80,newline:'\\n'}),'application/x-chess-pgn');note('PGN game downloaded.')};
+ $('exportFEN').onclick=()=>{if(!game)return;const fen=game.fen();downloadText('maxchess-position.fen',fen+'\\n','text/plain');note('FEN position downloaded.')};
+ $('timeControl').onchange=()=>{clockInitial=Number($('timeControl').value)||0;whiteSeconds=blackSeconds=clockInitial;clockStarted=false;clockPaused=false;flaggedSide=null;paintClocks();note('Time control changed. Start a new game to use it.')};
+
  function navigate(page){document.querySelectorAll('.pageview').forEach(v=>v.classList.remove('active'));let p=$('page-'+page);if(p)p.classList.add('active');document.querySelectorAll('.navitem').forEach(b=>b.classList.toggle('active',b.dataset.page===page));if(page==='play')window.scrollTo({top:0,behavior:'smooth'})}
  document.querySelectorAll('.navitem').forEach(b=>b.onclick=()=>navigate(b.dataset.page));document.querySelectorAll('[data-goto]').forEach(b=>b.onclick=()=>navigate(b.dataset.goto));document.querySelectorAll('[data-rightgo]').forEach(b=>b.onclick=()=>navigate(b.dataset.rightgo));
  document.querySelectorAll('.tab').forEach(b=>b.onclick=()=>{document.querySelectorAll('.tab').forEach(t=>t.classList.toggle('active',t===b));$('gameTab').classList.toggle('hidden',b.dataset.tab!=='game');$('learnTab').classList.toggle('hidden',b.dataset.tab!=='learn')});
