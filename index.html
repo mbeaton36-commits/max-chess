@@ -82,10 +82,11 @@
   <h2 id="accountTitle">Create your MaxChess profile</h2>
   <p id="accountIntro">Choose a username to personalize MaxChess on this device.</p>
   <form id="accountForm">
-   <label for="accountUsername">Username</label><input id="accountUsername" name="username" maxlength="20" minlength="3" autocomplete="nickname" pattern="[A-Za-z0-9_]+" placeholder="e.g. MaxKnight" required>
+   <label for="accountUsername">Username</label><input id="accountUsername" name="username" maxlength="30" minlength="3" autocomplete="nickname" placeholder="The Max of Chess" required>
+   <label for="accountPassword">Password</label><input id="accountPassword" name="password" type="password" minlength="8" autocomplete="new-password" placeholder="Create a password" required>
    <div class="account-actions"><button class="greenbtn" type="submit" style="margin:0">Save profile</button><button class="account-close" type="button" id="closeAccount">Cancel</button></div>
   </form>
-  <p class="account-notice">Preview version: this profile is saved only in this browser. It is not a secure online account and will not sync to other devices yet.</p>
+  <p class="account-notice">Important: this demo stores profile data in this browser only. Do not use a password you use anywhere else. It is not secure online authentication.</p>
  </div>
 </div>
 
@@ -169,16 +170,16 @@
  $('pieceStyle').onchange=()=>{style=$('pieceStyle').value;render();note('Piece style updated.')};
  $('themeQuick').onclick=$('rightTheme').onclick=()=>{navigate('play');$('boardTheme').focus();note('Choose a board theme in the Game panel.')};
  
- const accountModal=$('accountModal'),accountForm=$('accountForm'),accountUsername=$('accountUsername');
+ const accountModal=$('accountModal'),accountForm=$('accountForm'),accountUsername=$('accountUsername'),accountPassword=$('accountPassword');
  function getProfile(){try{return JSON.parse(localStorage.getItem('maxchess_profile')||'null')}catch(e){return null}}
  function paintProfile(){const profile=getProfile();$('loginBtn').textContent=profile?'Profile':'Log in';$('signupBtn').textContent=profile?'Log out':'Sign up';$('signupBtn').classList.toggle('profile-pill',!!profile);if(profile){$('opponentName').textContent='Black pieces';}}
- function openAccount(){const profile=getProfile();$('accountTitle').textContent=profile?'Your MaxChess profile':'Create your MaxChess profile';$('accountIntro').textContent=profile?'Your profile is saved in this browser.':'Choose a username to personalize MaxChess on this device.';accountUsername.value=profile?.username||'';accountModal.classList.add('open');accountUsername.focus()}
+ function openAccount(){const profile=getProfile();$('accountTitle').textContent=profile?'Your MaxChess profile':'Create your MaxChess profile';$('accountIntro').textContent=profile?'Your profile is saved in this browser.':'Choose a username and password for this browser-only demo.';accountUsername.value=profile?.username||'';accountPassword.value='';accountModal.classList.add('open');accountUsername.focus()}
  $('loginBtn').onclick=()=>{if(getProfile()){note('You are signed in to this browser profile.');return}openAccount()};
  $('signupBtn').onclick=()=>{if(getProfile()){if(confirm('Log out of this browser profile?')){localStorage.removeItem('maxchess_profile');paintProfile();note('Logged out of this browser profile.')}return}openAccount()};
  $('closeAccount').onclick=()=>accountModal.classList.remove('open');
  accountModal.addEventListener('click',e=>{if(e.target===accountModal)accountModal.classList.remove('open')});
  document.addEventListener('keydown',e=>{if(e.key==='Escape')accountModal.classList.remove('open')});
- accountForm.onsubmit=e=>{e.preventDefault();const username=accountUsername.value.trim();if(!/^[A-Za-z0-9_]{3,20}$/.test(username)){note('Use 3–20 letters, numbers, or underscores.');return}try{localStorage.setItem('maxchess_profile',JSON.stringify({username,createdAt:new Date().toISOString()}));accountModal.classList.remove('open');paintProfile();note('Welcome to MaxChess, '+username+'!')}catch(err){note('Could not save this profile in your browser.')}};
+ accountForm.onsubmit=e=>{e.preventDefault();const username=accountUsername.value.trim(),password=accountPassword.value;if(username.length<3||username.length>30){note('Use a username between 3 and 30 characters.');return}if(password.length<8){note('Use a password with at least 8 characters.');return}try{localStorage.setItem('maxchess_profile',JSON.stringify({username,password,special:username.toLowerCase()==='the max of chess',createdAt:new Date().toISOString()}));accountModal.classList.remove('open');paintProfile();note('Welcome to MaxChess, '+username+'!')}catch(err){note('Could not save this profile in your browser.')}};
  paintProfile();
 
  document.querySelectorAll('[data-learnpage]').forEach(()=>{});
