@@ -1,0 +1,120 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Max Chess — Play & Learn</title>
+<meta name="description" content="Play chess and learn the game for free with Max Chess.">
+<style>
+:root{--bg:#161512;--panel:#262421;--panel2:#312e2b;--text:#f2f0e8;--muted:#aaa69d;--green:#81b64c;--green2:#a3d160;--light:#ebecd0;--dark:#779556;--border:#45413b}
+*{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--text);font:16px/1.5 system-ui,-apple-system,Segoe UI,Roboto,sans-serif}button{font:inherit;cursor:pointer;border:0;border-radius:8px;padding:10px 15px;font-weight:700}button:focus-visible,a:focus-visible{outline:3px solid #f5d76e;outline-offset:3px}.topbar{height:68px;display:flex;align-items:center;justify-content:space-between;padding:0 max(20px,calc((100% - 1120px)/2));border-bottom:1px solid #34312c;background:#201e1b;position:sticky;top:0;z-index:5}.brand{display:flex;align-items:center;gap:10px;font-size:22px;font-weight:850;letter-spacing:-.5px}.logo{width:38px;height:38px;border-radius:10px;background:var(--green);display:grid;place-items:center;color:#18220e;font-size:25px}.topnav{display:flex;gap:8px}.navbtn{background:transparent;color:#d4d0c7}.navbtn.active,.navbtn:hover{background:var(--panel2);color:white}.hero{max-width:1120px;margin:32px auto 22px;padding:0 20px;display:flex;justify-content:space-between;gap:20px;align-items:end}.eyebrow{color:var(--green2);font-size:12px;text-transform:uppercase;letter-spacing:2px;font-weight:800}.hero h1{font-size:clamp(30px,4vw,46px);line-height:1.1;margin:5px 0 8px;letter-spacing:-1.5px}.hero p{margin:0;color:var(--muted)}.free-pill{border:1px solid #526b3e;color:var(--green2);padding:7px 12px;border-radius:99px;font-weight:750;white-space:nowrap}.layout{max-width:1120px;margin:auto;padding:0 20px 50px;display:grid;grid-template-columns:minmax(280px,640px) minmax(280px,1fr);gap:22px;align-items:start}.board-panel,.side-panel{background:var(--panel);border:1px solid #393630;border-radius:14px;overflow:hidden}.board-head{padding:15px 18px;display:flex;align-items:center;justify-content:space-between;gap:12px}.player{display:flex;align-items:center;gap:10px;font-weight:750}.avatar{width:34px;height:34px;border-radius:8px;background:#403c35;display:grid;place-items:center;font-size:20px}.subtle{color:var(--muted);font-size:12px;font-weight:500}.turn{font-size:12px;color:var(--green2);font-weight:800}.board{display:grid;grid-template-columns:repeat(8,1fr);width:100%;aspect-ratio:1;user-select:none;touch-action:manipulation}.sq{aspect-ratio:1;display:grid;place-items:center;position:relative;padding:0;border-radius:0;font-size:clamp(24px,4.3vw,52px);line-height:1;color:#171613}.sq.light{background:var(--light)}.sq.dark{background:var(--dark)}.sq.selected{background:#f6f669!important}.sq.legal:after{content:"";position:absolute;width:24%;height:24%;border-radius:50%;background:#20221d55}.sq.legal.capture:after{width:85%;height:85%;background:transparent;border:5px solid #20221d66}.sq.last{background:#cdd26c}.sq .piece{position:relative;z-index:1;filter:drop-shadow(0 1px 1px #0004)}.coords{position:absolute;font-size:10px;line-height:1;font-weight:800;left:3px;top:3px;color:#24251c99}.board-actions{padding:13px;display:flex;gap:8px;flex-wrap:wrap;background:#211f1c}.primary{background:var(--green);color:#17220f}.primary:hover{background:var(--green2)}.secondary{background:#403c35;color:#f0eee6}.secondary:hover{background:#514c43}.board-actions button{flex:1}.side-panel{padding:18px}.tabs{display:flex;gap:6px;padding:4px;background:#1e1c19;border-radius:10px;margin-bottom:17px}.tab{flex:1;background:transparent;color:var(--muted);padding:9px 5px}.tab.active{background:var(--panel2);color:white}.section-title{font-size:20px;margin:0 0 4px}.muted{color:var(--muted)}.status{background:#1f1d1a;border:1px solid #3d3932;border-radius:10px;padding:13px;margin:14px 0}.status strong{display:block;margin-bottom:3px}.moves{min-height:80px;max-height:170px;overflow:auto;font-variant-numeric:tabular-nums;color:#d5d0c5}.moves ol{margin:0;padding-left:27px;columns:2}.moves li{padding:2px 0}.lesson-list{display:grid;gap:9px;margin-top:15px}.lesson{background:#211f1c;border:1px solid #3a3630;border-radius:10px;padding:13px;text-align:left;color:var(--text);width:100%}.lesson:hover,.lesson.chosen{border-color:var(--green);background:#2a3023}.lesson small{display:block;color:var(--muted);font-weight:500;margin-top:2px}.lesson-detail{margin-top:13px;background:#1f1d1a;padding:14px;border-radius:10px}.lesson-detail h3{margin:0 0 5px}.lesson-detail p{margin:0;color:#d0ccc2}.hidden{display:none!important}.footer{text-align:center;color:#777269;font-size:12px;padding:0 20px 30px}.toast{color:var(--green2);font-size:13px;min-height:20px;margin-top:8px}.promo{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-top:15px;padding:14px;background:#20271b;border-radius:10px}.promo p{margin:0;font-size:13px;color:#c4d1b6}.promo strong{display:block;color:#eff9e6}.small-btn{padding:7px 10px;font-size:13px;white-space:nowrap}
+@media(max-width:800px){.layout{grid-template-columns:1fr;max-width:650px}.hero{align-items:start}.free-pill{font-size:12px}.topbar{padding:0 16px}.topnav .navbtn{padding:8px}.hero{margin-top:24px}.sq{font-size:clamp(27px,8vw,54px)}}
+@media(max-width:430px){.topnav .navbtn{font-size:13px;padding:7px}.hero{display:block}.free-pill{display:inline-block;margin-top:12px}.board-head{padding:11px}.sq{font-size:clamp(25px,8.3vw,38px)}}
+</style>
+</head>
+<body>
+<header class="topbar">
+ <div class="brand"><div class="logo">♞</div><span>Max Chess</span></div>
+ <nav class="topnav" aria-label="Main navigation"><button class="navbtn active" data-view="play">Play</button><button class="navbtn" data-view="learn">Learn</button></nav>
+</header>
+<section class="hero">
+ <div><div class="eyebrow">Your chess journey starts here</div><h1>Think. Play. Get better.</h1><p>A free place to play chess and learn one move at a time.</p></div>
+ <div class="free-pill">✦ Free forever</div>
+</section>
+<main class="layout">
+ <section class="board-panel" aria-label="Chess game">
+  <div class="board-head"><div class="player"><div class="avatar">♟</div><div>Black <div class="subtle">Ready to play</div></div></div><div class="turn" id="turnLabel">WHITE TO MOVE</div></div>
+  <div class="board" id="board" role="grid" aria-label="Chess board"></div>
+  <div class="board-head"><div class="player"><div class="avatar">♙</div><div>You <div class="subtle">White pieces</div></div></div><div class="subtle" id="moveCount">Move 1</div></div>
+  <div class="board-actions"><button class="primary" id="newGame">New game</button><button class="secondary" id="undo">↶ Undo</button><button class="secondary" id="flip">⇅ Flip board</button></div>
+ </section>
+ <aside class="side-panel">
+  <div class="tabs"><button class="tab active" data-tab="game">Game</button><button class="tab" data-tab="lessons">Lessons</button></div>
+  <div id="gameTab">
+   <h2 class="section-title">Your game</h2><div class="muted" style="font-size:13px">Play a friend on this device. Tap a piece, then tap its destination.</div>
+   <div class="status"><strong id="statusTitle">Your move, White</strong><span id="statusText" class="muted">Choose a piece to see its legal moves.</span></div>
+   <h3 style="font-size:15px;margin:16px 0 8px">Move history</h3><div class="moves" id="moves"><span class="muted">Your moves will appear here.</span></div>
+   <div class="toast" id="toast" role="status"></div>
+   <div class="promo"><p><strong>Little by little</strong>Every game is a chance to learn.</p><button class="secondary small-btn" id="goLessons">Learn chess →</button></div>
+  </div>
+  <div id="lessonsTab" class="hidden">
+   <h2 class="section-title">Chess lessons</h2><p class="muted" style="font-size:13px;margin-top:4px">Start with the basics. Pick a lesson below.</p>
+   <div class="lesson-list" id="lessonList">
+    <button class="lesson chosen" data-lesson="pieces">♟ The pieces <small>Learn how each piece moves</small></button>
+    <button class="lesson" data-lesson="check">⚔ Check & checkmate <small>Attack the king and win</small></button>
+    <button class="lesson" data-lesson="opening">🌱 Opening principles <small>Make a strong start</small></button>
+    <button class="lesson" data-lesson="safety">🛡 Keep your pieces safe <small>Think before you move</small></button>
+   </div>
+   <div class="lesson-detail" id="lessonDetail"><h3>The pieces</h3><p>The king moves one square in any direction. The queen moves any number of squares in straight lines or diagonals. Rooks move straight, bishops move diagonally, and knights jump in an L-shape. Pawns move forward and capture diagonally.</p></div>
+  </div>
+ </aside>
+</main>
+<div class="footer">Made for curious chess players · Max Chess is free to use</div>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/chess.js/0.10.3/chess.min.js"></script>
+<script>
+(function(){
+ const boardEl=document.getElementById('board'), statusTitle=document.getElementById('statusTitle'),statusText=document.getElementById('statusText'),turnLabel=document.getElementById('turnLabel'),movesEl=document.getElementById('moves'),moveCount=document.getElementById('moveCount'),toast=document.getElementById('toast');
+ const symbols={wp:'♙',wn:'♘',wb:'♗',wr:'♖',wq:'♕',wk:'♔',bp:'♟',bn:'♞',bb:'♝',br:'♜',bq:'♛',bk:'♚'};
+ const game=window.Chess?new Chess():null; let selected=null,legal=[],flipped=false,lastMove=null;
+ const files=['a','b','c','d','e','f','g','h'];
+ function squareName(r,c){return files[c]+(8-r)}
+ function render(){
+  boardEl.innerHTML='';
+  const rows=Array.from({length:8},(_,i)=>i),cols=Array.from({length:8},(_,i)=>i);
+  if(flipped){rows.reverse();cols.reverse()}
+  rows.forEach((r,ri)=>cols.forEach((c,ci)=>{
+   const sq=squareName(r,c),piece=game?game.get(sq):null,btn=document.createElement('button');
+   btn.className='sq '+((r+c)%2===0?'light':'dark');btn.setAttribute('role','gridcell');btn.setAttribute('aria-label',sq+(piece?', '+piece.color+' '+piece.type:' empty'));
+   if(selected===sq)btn.classList.add('selected');
+   if(legal.some(m=>m.to===sq)){btn.classList.add('legal');if(piece)btn.classList.add('capture')}
+   if(lastMove&&(lastMove.from===sq||lastMove.to===sq))btn.classList.add('last');
+   if(ci===0){const coord=document.createElement('span');coord.className='coords';coord.textContent=sq[1];btn.appendChild(coord)}
+   if(ri===7){const coord=document.createElement('span');coord.className='coords';coord.style.left='auto';coord.style.right='3px';coord.style.top='auto';coord.style.bottom='3px';coord.textContent=sq[0];btn.appendChild(coord)}
+   if(piece){const span=document.createElement('span');span.className='piece';span.textContent=symbols[piece.color+piece.type];span.style.color=piece.color==='w'?'#fffdf3':'#24231f';span.style.textShadow=piece.color==='w'?'0 1px 2px #24231f,1px 0 #24231f,-1px 0 #24231f,0 -1px #24231f':'0 1px 1px #ffffff55';btn.appendChild(span)}
+   btn.addEventListener('click',()=>tap(sq));boardEl.appendChild(btn);
+  }));
+  updateInfo();
+ }
+ function tap(sq){
+  if(!game||game.game_over())return;
+  toast.textContent='';
+  const piece=game.get(sq);
+  if(selected&&legal.some(m=>m.to===sq)){
+   const move=game.move({from:selected,to:sq,promotion:'q'});
+   if(move){lastMove={from:move.from,to:move.to};selected=null;legal=[];render();return}
+  }
+  if(piece&&piece.color===game.turn()){
+   selected=sq;legal=game.moves({square:sq,verbose:true});statusText.textContent='Legal moves are marked on the board.';render();
+  }else{selected=null;legal=[];render()}
+ }
+ function updateInfo(){
+  if(!game)return;
+  const over=game.game_over();turnLabel.textContent=over?'GAME OVER':(game.turn()==='w'?'WHITE':'BLACK')+' TO MOVE';
+  moveCount.textContent='Move '+(Math.floor(game.history().length/2)+1);
+  if(game.in_checkmate()){statusTitle.textContent='Checkmate!';statusText.textContent=(game.turn()==='w'?'Black':'White')+' wins. Start a new game to play again.'}
+  else if(game.in_draw()){statusTitle.textContent='Draw game';statusText.textContent='The game is drawn. Start a new game whenever you like.'}
+  else if(game.in_check()){statusTitle.textContent='Check!';statusText.textContent='The '+(game.turn()==='w'?'White':'Black')+' king is under attack.'}
+  else{statusTitle.textContent='Your move, '+(game.turn()==='w'?'White':'Black');statusText.textContent=selected?'Choose one of the highlighted squares.':'Tap a piece, then tap its destination.'}
+  const hist=game.history();if(!hist.length)movesEl.innerHTML='<span class="muted">Your moves will appear here.</span>';else{let html='<ol>';for(let i=0;i<hist.length;i+=2){html+='<li>'+hist[i]+(hist[i+1]?' &nbsp; '+hist[i+1]:'')+'</li>'}html+='</ol>';movesEl.innerHTML=html}
+ }
+ document.getElementById('newGame').addEventListener('click',()=>{game.reset();selected=null;legal=[];lastMove=null;toast.textContent='New game started.';render()});
+ document.getElementById('undo').addEventListener('click',()=>{if(game.undo()){selected=null;legal=[];lastMove=null;toast.textContent='Last move undone.';render()}else toast.textContent='There are no moves to undo yet.'});
+ document.getElementById('flip').addEventListener('click',()=>{flipped=!flipped;render()});
+ function setView(view){document.querySelectorAll('.navbtn').forEach(b=>b.classList.toggle('active',b.dataset.view===view));if(view==='learn')setTab('lessons');else setTab('game');document.querySelector('.board-panel').scrollIntoView({behavior:'smooth',block:'start'})}
+ document.querySelectorAll('.navbtn').forEach(b=>b.addEventListener('click',()=>setView(b.dataset.view)));
+ function setTab(tab){document.querySelectorAll('.tab').forEach(b=>b.classList.toggle('active',b.dataset.tab===tab));document.getElementById('gameTab').classList.toggle('hidden',tab!=='game');document.getElementById('lessonsTab').classList.toggle('hidden',tab!=='lessons')}
+ document.querySelectorAll('.tab').forEach(b=>b.addEventListener('click',()=>setTab(b.dataset.tab)));
+ document.getElementById('goLessons').addEventListener('click',()=>setView('learn'));
+ const lessons={
+ pieces:['The pieces','The king moves one square in any direction. The queen moves any number of squares in straight lines or diagonals. Rooks move straight, bishops move diagonally, and knights jump in an L-shape. Pawns move forward and capture diagonally.'],
+ check:['Check & checkmate','Check means the king is under attack and must get safe. You can move the king, block the attack, or capture the attacking piece. Checkmate means there is no legal way to escape: the game is over!'],
+ opening:['Opening principles','1. Control the center with pawns and pieces. 2. Develop knights and bishops early. 3. Castle to protect your king. 4. Try not to move the same piece again and again without a reason.'],
+ safety:['Keep your pieces safe','Before every move, ask: “What is my opponent threatening?” Check whether your piece can be captured, and look for checks, captures, and threats. A simple safe move is often stronger than a risky trick.']
+ };
+ document.querySelectorAll('.lesson').forEach(b=>b.addEventListener('click',()=>{document.querySelectorAll('.lesson').forEach(x=>x.classList.remove('chosen'));b.classList.add('chosen');const item=lessons[b.dataset.lesson];document.getElementById('lessonDetail').innerHTML='<h3>'+item[0]+'</h3><p>'+item[1]+'</p>'}));
+ if(!game){statusTitle.textContent='Board library did not load';statusText.textContent='Please check your internet connection and reload this page.'}
+ render();
+})();
+</script>
+</body>
+</html>
