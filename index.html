@@ -166,7 +166,7 @@
  function tap(sq){
   if(!game||game.game_over()||thinking)return;if(onlineGameId&&game.turn()!==onlineColor){note('Wait for your opponent to move.');return}
   if(selected&&legal.some(m=>m.to===sq)){
-   let move=game.move({from:selected,to:sq,promotion:'q'});if(move){clockStarted=true;lastMove={from:move.from,to:move.to};selected=null;legal=[];render();if(puzzleMode){if(move.san==='Qg7#'){puzzleMode=false;let pr=Number(localStorage.getItem('maxchess_puzzle_rating')||800)+12;localStorage.setItem('maxchess_puzzle_rating',String(pr));$('puzzleRating').textContent=pr;$('puzzleFeedback').textContent='Correct! Checkmate. +12 puzzle points.';note('Puzzle solved! Brilliant move.')}else{game.load(puzzleFen);selected=null;legal=[];lastMove=null;render();$('puzzleFeedback').textContent='Not quite. The position has been reset—try again.';note('Not the puzzle solution. Try again.')}}if(onlineGameId)saveOnlinePosition();if(computerMode&&game.turn()==='b'&&!game.game_over())setTimeout(computerMove,350);return}
+   const previousFen=game.fen();let move=game.move({from:selected,to:sq,promotion:'q'});if(move){clockStarted=true;lastMove={from:move.from,to:move.to};selected=null;legal=[];render();if(puzzleMode){if(move.san==='Qg7#'){puzzleMode=false;let pr=Number(localStorage.getItem('maxchess_puzzle_rating')||800)+12;localStorage.setItem('maxchess_puzzle_rating',String(pr));$('puzzleRating').textContent=pr;$('puzzleFeedback').textContent='Correct! Checkmate. +12 puzzle points.';note('Puzzle solved! Brilliant move.')}else{game.load(puzzleFen);selected=null;legal=[];lastMove=null;render();$('puzzleFeedback').textContent='Not quite. The position has been reset—try again.';note('Not the puzzle solution. Try again.')}}if(onlineGameId)saveOnlinePosition(move,previousFen);if(computerMode&&game.turn()==='b'&&!game.game_over())setTimeout(computerMove,350);return}
   }
   let p=game.get(sq);if(p&&p.color===game.turn()){selected=sq;legal=game.moves({square:sq,verbose:true});render()}else{selected=null;legal=[];render()}
  }
@@ -275,10 +275,15 @@
  renderStudyLibrary();
  function escapeCommunity(v){return String(v??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]))}
  $('refreshCommunity').onclick=renderCommunity;
- async function saveOnlinePosition(){
-  if(!authClient||!onlineGameId)return;
-  const result=await authClient.from('games').update({fen:game.fen(),pgn:game.pgn(),status:game.game_over()?(game.in_draw()?'draw':game.turn()==='w'?'black_won':'white_won'):'active',updated_at:new Date().toISOString()}).eq('id',onlineGameId);
-  if(result.error)note('Could not save online move: '+result.error.message);
+ async function saveOnlinePosition(move,expectedFen){
+  if(!authClient||!onlineGameId||!move)return;
+  const {data,error}=await authClient.functions.invoke('maxchess-move',{body:{game_id:onlineGameId,from:move.from,to:move.to,promotion:move.promotion||'q',expected_fen:expectedFen}});
+  if(error||data?.error){
+   note('Move not saved: '+(data?.error||error?.message||'please try again'));
+   const latest=await authClient.from('games').select('fen,status').eq('id',onlineGameId).maybeSingle();
+   if(latest.data?.fen){game.load(latest.data.fen);selected=null;legal=[];render();if(latest.data.status!=='active')$('onlineStatus').textContent='Game finished: '+latest.data.status.replace('_',' ');}
+   return;
+  }
  }
  async function loadOnlineGame(row){
   if(!row||!authUser)return;
