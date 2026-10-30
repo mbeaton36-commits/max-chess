@@ -22,17 +22,25 @@ Deno.serve(async (req: Request) => {
   if (!authHeader?.startsWith("Bearer ")) return reply({ error: "Sign in first." }, 401);
 
   const supabaseUrl = Deno.env.get("SUPABASE_URL") ?? "";
-  const supabaseKey = Deno.env.get("SUPABASE_ANON_KEY") ?? Deno.env.get("SUPABASE_PUBLISHABLE_KEY") ?? "";
-  if (!supabaseUrl || !supabaseKey) return reply({ error: "Server configuration is incomplete." }, 500);
+  const publicKey = Deno.env.get("SUPABASE_ANON_KEY") ?? Deno.env.get("SUPABASE_PUBLISHABLE_KEY") ?? "";
+  const serviceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? "";
+  if (!supabaseUrl || !publicKey || !serviceKey) {
+    return reply({ error: "Server configuration is incomplete." }, 500);
+  }
 
-  const supabase = createClient(supabaseUrl, supabaseKey, {
+  const userClient = createClient(supabaseUrl, publicKey, {
     global: { headers: { Authorization: authHeader } },
+    auth: { persistSession: false, autoRefreshToken: false },
+  });
+  // This privileged client stays inside the Edge Function. Its key is never sent
+  // to the browser; it is used only after the caller and move have been validated.
+  const serverClient = createClient(supabaseUrl, serviceKey, {
     auth: { persistSession: false, autoRefreshToken: false },
   });
 
   try {
     const token = authHeader.slice("Bearer ".length);
-    const { data: userData, error: userError } = await supabase.auth.getUser(token);
+    const { data: userData, error: userError } = await userClient.auth.getUser(token);
     const user = userData?.user;
     if (userError || !user) return reply({ error: "Your sign-in has expired. Please log in again." }, 401);
 
@@ -48,7 +56,7 @@ Deno.serve(async (req: Request) => {
       return reply({ error: "The move request is incomplete or invalid." }, 400);
     }
 
-    const { data: row, error: readError } = await supabase
+    const { data: row, error: readError } = await userClient
       .from("games")
       .select("id, white_player, black_player, fen, pgn, status")
       .eq("id", gameId)
@@ -80,11 +88,12 @@ Deno.serve(async (req: Request) => {
     if (chess.isCheckmate()) status = chess.turn() === "w" ? "black_won" : "white_won";
     else if (chess.isDraw()) status = "draw";
 
-    const { data: saved, error: saveError } = await supabase
+    const { data: saved, error: saveError } = await serverClient
       .from("games")
       .update({ fen: chess.fen(), pgn: chess.pgn(), status })
       .eq("id", gameId)
       .eq("fen", expectedFen)
+      .eq("status", "active")
       .select("id, fen, pgn, status, updated_at")
       .maybeSingle();
 
