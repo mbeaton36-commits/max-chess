@@ -70,6 +70,7 @@
    <div class="playerbar"><div class="avatar">♙</div><div><div class="playername">White pieces</div><div class="playersub">You can play both sides</div></div><div class="clock" id="whiteClock">10:00</div></div>
    <div class="boardtools"><button class="toolbtn" id="newGame">＋ New game</button><button class="toolbtn" id="undo">↶ Takeback</button><button class="toolbtn" id="flip">⇅ Flip board</button><button class="toolbtn" id="hint">✦ Hint</button><select class="toolbtn" id="timeControl" aria-label="Time control"><option value="0">No clock</option><option value="60">1 + 0 Bullet</option><option value="180">3 + 0 Blitz</option><option value="300">5 + 0 Blitz</option><option value="600" selected>10 + 0 Rapid</option><option value="900">15 + 0 Rapid</option></select><button class="toolbtn" id="exportPGN">⇩ Download PGN</button><button class="toolbtn" id="exportFEN">Copy position (FEN)</button></div>
    <div class="boardfoot"><span id="moveCount">Move 1</span><span>Tap a piece, then a square</span><span id="turnFoot">White to move</span></div>
+   <div class="home-panel" style="margin-top:14px"><h3>🌐 Play anyone online</h3><p id="onlineStatus" class="muted">Sign in, then find an opponent anywhere on MaxChess.</p><div style="display:flex;gap:8px;flex-wrap:wrap"><button class="greenbtn" id="findOnline" style="margin:0">Find an online game</button><button class="widebtn" id="cancelOnline" style="margin:0">Cancel search</button></div><small class="muted" style="display:block;margin-top:8px">Online games need a MaxChess account. Your rating is saved to your profile.</small></div>
   </div>
   <aside class="sidegame">
    <div class="tabrow"><button class="tab active" data-tab="game">Game</button><button class="tab" data-tab="learn">Learn</button></div>
@@ -157,9 +158,9 @@
   $('opponentSub').textContent=computerMode?'Beginner computer mode':'Local two-player game';
  }
  function tap(sq){
-  if(!game||game.game_over()||thinking)return;
+  if(!game||game.game_over()||thinking)return;if(onlineGameId&&game.turn()!==onlineColor){note('Wait for your opponent to move.');return}
   if(selected&&legal.some(m=>m.to===sq)){
-   let move=game.move({from:selected,to:sq,promotion:'q'});if(move){clockStarted=true;lastMove={from:move.from,to:move.to};selected=null;legal=[];render();if(computerMode&&game.turn()==='b'&&!game.game_over())setTimeout(computerMove,350);return}
+   let move=game.move({from:selected,to:sq,promotion:'q'});if(move){clockStarted=true;lastMove={from:move.from,to:move.to};selected=null;legal=[];render();if(onlineGameId)saveOnlinePosition();if(computerMode&&game.turn()==='b'&&!game.game_over())setTimeout(computerMove,350);return}
   }
   let p=game.get(sq);if(p&&p.color===game.turn()){selected=sq;legal=game.moves({square:sq,verbose:true});render()}else{selected=null;legal=[];render()}
  }
@@ -206,12 +207,63 @@
  
  const accountModal=$('accountModal'),accountForm=$('accountForm'),accountUsername=$('accountUsername'),accountPassword=$('accountPassword'),accountEmail=$('accountEmail');
  const authStatus=$('authStatus'),supabaseUrl=$('supabaseUrl'),supabaseKey=$('supabaseKey');
- let authClient=null,authMode='signup',authUser=null;
+ let authClient=null,authMode='signup',authUser=null,onlineGameId=null,onlineColor=null,onlinePoll=null,onlineBusy=false;
  function savedAuthConfig(){try{return JSON.parse(localStorage.getItem('maxchess_auth_config')||'null')}catch(e){return null}}
  function setAuthStatus(msg){if(authStatus)authStatus.textContent=msg}
  function setAuthMode(mode){authMode=mode;accountUsername.required=mode!=='login';accountUsername.style.display=mode==='login'?'none':'';accountForm.querySelector('label[for="accountUsername"]').style.display=mode==='login'?'none':'';$('accountTitle').textContent=mode==='login'?'Log in to MaxChess':'Create your MaxChess account';$('accountIntro').textContent=mode==='login'?'Enter the email and password you used when you created your account.':'Choose a username and email to create your online MaxChess account.';accountPassword.autocomplete=mode==='login'?'current-password':'new-password';accountForm.querySelector('button[type="submit"]').textContent=mode==='login'?'Log in':'Create account';$('switchAccountMode').textContent=mode==='login'?'New to MaxChess? Create an account':'Already have an account? Log in'}
  paintRating();\n function paintProfile(){const active=!!authUser;$('loginBtn').textContent=active?(authUser.user_metadata?.username||'Profile'):'Log in';$('signupBtn').textContent=active?'Log out':'Sign up';$('signupBtn').classList.toggle('profile-pill',active);if(active)$('opponentName').textContent='Black pieces'}
- async function connectAuth(url,key,save=true){if(!window.supabase?.createClient){setAuthStatus('Could not load the Supabase client library. Refresh and try again.');return false}if(!/^https:\/\/[^/]+\.supabase\.co\/?$/.test(url)||!key.trim()){setAuthStatus('Enter a valid Supabase project URL and public anon/publishable key.');return false}try{authClient=window.supabase.createClient(url.replace(/\/$/,''),key.trim());const {data,error}=await authClient.auth.getSession();if(error)throw error;authUser=data.session?.user||null;if(save)localStorage.setItem('maxchess_auth_config',JSON.stringify({url:url.replace(/\/$/,''),key:key.trim()}));authClient.auth.onAuthStateChange((_event,session)=>{authUser=session?.user||null;paintProfile()});paintProfile();setAuthStatus('Connected to Supabase. You can now create an account or sign in.');return true}catch(e){authClient=null;setAuthStatus('Connection failed: '+(e.message||'check your project URL and public key'));return false}}
+ async function connectAuth(url,key,save=true){if(!window.supabase?.createClient){setAuthStatus('Could not load the Supabase client library. Refresh and try again.');return false}if(!/^https:\/\/[^/]+\.supabase\.co\/?$/.test(url)||!key.trim()){setAuthStatus('Enter a valid Supabase project URL and public anon/publishable key.');return false}try{authClient=window.supabase.createClient(url.replace(/\/$/,''),key.trim());const {data,error}=await authClient.auth.getSession();if(error)throw error;authUser=data.session?.user||null;if(save)localStorage.setItem('maxchess_auth_config',JSON.stringify({url:url.replace(/\/$/,''),key:key.trim()}));authClient.auth.onAuthStateChange((_event,session)=>{authUser=session?.user||null;paintProfile()});paintProfile();setAuthStatus('Connected to MaxChess accounts and online games. You can now create an account or sign in.');return true}catch(e){authClient=null;setAuthStatus('Connection failed: '+(e.message||'check your project URL and public key'));return false}}
+
+ async function saveOnlinePosition(){
+  if(!authClient||!onlineGameId)return;
+  const result=await authClient.from('games').update({fen:game.fen(),pgn:game.pgn(),status:game.game_over()?(game.in_draw()?'draw':game.turn()==='w'?'black_won':'white_won'):'active',updated_at:new Date().toISOString()}).eq('id',onlineGameId);
+  if(result.error)note('Could not save online move: '+result.error.message);
+ }
+ async function loadOnlineGame(row){
+  if(!row||!authUser)return;
+  onlineGameId=row.id;onlineColor=row.white_player===authUser.id?'w':'b';computerMode=false;
+  if(onlinePoll){clearInterval(onlinePoll);onlinePoll=null}
+  game.load(row.fen);selected=null;legal=[];lastMove=null;clockStarted=false;render();
+  const otherId=onlineColor==='w'?row.black_player:row.white_player;
+  const prof=await authClient.from('profiles').select('username,rating').eq('id',otherId).maybeSingle();
+  $('opponentName').textContent=prof.data?.username||'Online opponent';
+  $('opponentSub').textContent='Online player · '+(prof.data?.rating||1200)+' rating';
+  $('onlineStatus').textContent='Game started! You are playing '+(onlineColor==='w'?'White':'Black')+'.';
+  note('Opponent found! Your online game is ready.');
+  onlinePoll=setInterval(async()=>{
+   if(!onlineGameId)return;
+   const q=await authClient.from('games').select('*').eq('id',onlineGameId).maybeSingle();
+   if(q.data&&q.data.fen!==game.fen()&&q.data.updated_at){
+    const currentFen=game.fen();
+    if(q.data.fen!==currentFen){game.load(q.data.fen);selected=null;legal=[];render();if(q.data.status!=='active'){$('onlineStatus').textContent='Game finished: '+q.data.status.replace('_',' ');clearInterval(onlinePoll);onlinePoll=null}}}
+   }
+  },1500);
+ }
+ async function checkForOnlineGame(){
+  if(!authClient||!authUser||!onlineBusy)return;
+  const q=await authClient.from('games').select('*').or('white_player.eq.'+authUser.id+',black_player.eq.'+authUser.id).eq('status','active').order('created_at',{ascending:false}).limit(1);
+  if(q.data?.length){await loadOnlineGame(q.data[0]);onlineBusy=false}
+ }
+ async function startOnlineSearch(){
+  if(!authClient||!authUser){note('Log in or create a MaxChess account first.');openAccount('login');return}
+  if(onlineBusy)return;
+  if(onlinePoll){clearInterval(onlinePoll);onlinePoll=null}
+  onlineBusy=true;onlineGameId=null;onlineColor=null;
+  const secs=Number($('timeControl').value)||0;
+  const tc=secs===0?'0+0':secs===60?'1+0':secs===180?'3+0':secs===300?'5+0':secs===900?'15+0':'10+0';
+  $('onlineStatus').textContent='Searching for an opponent… Keep this page open.';
+  const result=await authClient.rpc('find_maxchess_match',{p_time_control:tc});
+  if(result.error){onlineBusy=false;$('onlineStatus').textContent='Matchmaking error: '+result.error.message;return}
+  if(result.data?.status==='matched'){await checkForOnlineGame();return}
+  $('onlineStatus').textContent='You are in the queue. Waiting for another player…';
+  onlinePoll=setInterval(checkForOnlineGame,2000);
+ }
+ $('findOnline').onclick=startOnlineSearch;
+ $('cancelOnline').onclick=async()=>{
+  onlineBusy=false;if(onlinePoll){clearInterval(onlinePoll);onlinePoll=null}
+  if(authClient&&authUser)await authClient.from('matchmaking_queue').delete().eq('user_id',authUser.id);
+  $('onlineStatus').textContent='Search cancelled.';note('Online search cancelled.');
+ };
  function openAccount(mode){setAuthMode(mode||'signup');accountUsername.value='';accountEmail.value='';accountPassword.value='';accountModal.classList.add('open');accountUsername.focus()}
  $('loginBtn').onclick=()=>{if(authUser){note('You are signed in as '+(authUser.user_metadata?.username||authUser.email)+'.');return}openAccount('login')};
  $('signupBtn').onclick=async()=>{if(authUser){if(authClient){const {error}=await authClient.auth.signOut();if(error){note('Could not sign out: '+error.message);return}authUser=null;paintProfile();note('Logged out of MaxChess.')}return}openAccount('signup')};
