@@ -277,7 +277,7 @@
  $('refreshCommunity').onclick=renderCommunity;
  async function saveOnlinePosition(move,expectedFen){
   if(!authClient||!onlineGameId||!move)return;
-  const {data,error}=await authClient.functions.invoke('maxchess-move',{body:{game_id:onlineGameId,from:move.from,to:move.to,promotion:move.promotion||'q',expected_fen:expectedFen}});
+  const {data,error}=await authClient.functions.invoke('maxchess-move',{body:{game_id:onlineGameId,from:move.from,to:move.to,promotion:move.promotion||null,expected_fen:expectedFen}});
   if(error||data?.error){
    note('Move not saved: '+(data?.error||error?.message||'please try again'));
    const latest=await authClient.from('games').select('fen,status').eq('id',onlineGameId).maybeSingle();
